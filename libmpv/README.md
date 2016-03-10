@@ -84,6 +84,12 @@ Similar to the cocoa sample, but shows how to integrate mpv's OpenGL renderer
 using libmpv's opengl-cb API. Since it does not require complicated interaction
 with Cocoa elements from different libraries, it's more robust.
 
+### csharp
+
+Shows how to use libmpv from C# on Windows. Uses Platform Invoke to call into
+mpv-1.dll directly and uses native window embedding to show the video in a
+Windows Forms control.
+
 ### qt
 
 Shows how to embed the mpv video window in Qt (using normal desktop widgets).
