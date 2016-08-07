@@ -118,3 +118,8 @@ video is not a normal QML element. Uses the opengl-cb API for video.
 
 Show how to embed the mpv OpenGL renderer in SDL. Uses the opengl-cb API for
 video.
+
+### streamcb
+
+Demonstrates use of the custom stream API.
+
