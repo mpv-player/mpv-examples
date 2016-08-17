@@ -166,7 +166,6 @@ namespace mpv
                 return;
 
             _mpvInitialize.Invoke(_mpvHandle);
-            _mpvSetOptionString(_mpvHandle, GetUtf8Bytes("vo"), GetUtf8Bytes("direct3d"));
             _mpvSetOptionString(_mpvHandle, GetUtf8Bytes("keep-open"), GetUtf8Bytes("always"));
             int mpvFormatInt64 = 4;
             var windowId = pictureBox1.Handle.ToInt64();
