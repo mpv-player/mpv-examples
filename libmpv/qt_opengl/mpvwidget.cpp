@@ -123,7 +123,28 @@ void MpvWidget::handle_mpv_event(mpv_event *event)
     }
 }
 
+// Make Qt invoke mpv_opengl_cb_draw() to draw a new/updated video frame.
+void MpvWidget::maybeUpdate()
+{
+    // If the Qt window is not visible, Qt's update() will just skip rendering.
+    // This confuses mpv's opengl-cb API, and may lead to small occasional
+    // freezes due to video rendering timing out.
+    // Handle this by manually redrawing.
+    // Note: Qt doesn't seem to provide a way to query whether update() will
+    //       be skipped, and the following code still fails when e.g. switching
+    //       to a different workspace with a reparenting window manager.
+    if (window()->isMinimized()) {
+        makeCurrent();
+        paintGL();
+        context()->swapBuffers(context()->surface());
+        swapped();
+        doneCurrent();
+    } else {
+        update();
+    }
+}
+
 void MpvWidget::on_update(void *ctx)
 {
-    QMetaObject::invokeMethod((MpvWidget*)ctx, "update");
+    QMetaObject::invokeMethod((MpvWidget*)ctx, "maybeUpdate");
 }

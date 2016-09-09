@@ -25,6 +25,7 @@ protected:
 private Q_SLOTS:
     void swapped();
     void on_mpv_events();
+    void maybeUpdate();
 private:
     void handle_mpv_event(mpv_event *event);
     static void on_update(void *ctx);
