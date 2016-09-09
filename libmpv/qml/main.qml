@@ -13,7 +13,7 @@ Item {
 
         MouseArea {
             anchors.fill: parent
-            onClicked: renderer.command(["loadfile", "../../../test.mkv"])
+            onClicked: renderer.command(["loadfile", "test.mkv"])
         }
     }
 
@@ -38,7 +38,7 @@ Item {
             anchors.margins: 10
             wrapMode: Text.WordWrap
             text: "QtQuick and mpv are both rendering stuff.\n
-                   Click to load ../../../test.mkv"
+                   Click to load test.mkv"
         }
 
         // Don't take these controls too seriously. They're for testing.
@@ -50,9 +50,9 @@ Item {
                 text: "Make video look like on a Smart TV"
                 onClicked: {
                     if (checkbox.checked) {
-                        renderer.command(["vo_cmdline", "sharpen=5.0"])
+                        renderer.setProperty("sharpen", 5.0)
                     } else {
-                        renderer.command(["vo_cmdline", ""])
+                        renderer.setProperty("sharpen", 0)
                     }
                 }
             }
