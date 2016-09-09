@@ -51,7 +51,7 @@ void MpvRenderer::paint()
 }
 
 MpvObject::MpvObject(QQuickItem * parent)
-    : QQuickItem(parent), mpv_gl(0), renderer(0)
+    : QQuickItem(parent), mpv_gl(0), renderer(0), killOnce(false)
 {
     mpv = mpv::qt::Handle::FromRawHandle(mpv_create());
     if (!mpv)
@@ -101,6 +101,10 @@ void MpvObject::handleWindowChanged(QQuickWindow *win)
 
 void MpvObject::sync()
 {
+    if (killOnce)
+        cleanup();
+    killOnce = false;
+
     if (!renderer) {
         renderer = new MpvRenderer(mpv, mpv_gl);
         connect(window(), &QQuickWindow::beforeRendering,
@@ -138,6 +142,16 @@ void MpvObject::doUpdate()
 void MpvObject::command(const QVariant& params)
 {
     mpv::qt::command_variant(mpv, params);
+}
+
+void MpvObject::reinitRenderer()
+{
+    // Don't make it stop playback if the VO dies.
+    mpv_set_option_string(mpv, "stop-playback-on-init-failure", "no");
+    // Make it recreate the renderer, which involves calling
+    // mpv_opengl_cb_uninit_gl() (which is the thing we want to test).
+    killOnce = true;
+    window()->update();
 }
 
 int main(int argc, char **argv)

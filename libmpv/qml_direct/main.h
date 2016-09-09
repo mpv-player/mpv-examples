@@ -30,6 +30,7 @@ class MpvObject : public QQuickItem
     mpv::qt::Handle mpv;
     mpv_opengl_cb_context *mpv_gl;
     MpvRenderer *renderer;
+    bool killOnce;
 
 public:
     MpvObject(QQuickItem * parent = 0);
@@ -39,6 +40,7 @@ public slots:
     void sync();
     void swapped();
     void cleanup();
+    void reinitRenderer();
 signals:
     void onUpdate();
 private slots:

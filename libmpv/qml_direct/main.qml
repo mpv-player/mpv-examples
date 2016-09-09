@@ -18,7 +18,7 @@ Item {
 
     MouseArea {
         anchors.fill: parent
-        onClicked: renderer.command(["loadfile", "../../../test.mkv"])
+        onClicked: renderer.command(["loadfile", "test.mkv"])
     }
 
     Rectangle {
@@ -43,7 +43,20 @@ Item {
             wrapMode: Text.WordWrap
             text: "QtQuick and mpv are both rendering stuff.\n
                    In this example, mpv is always in the background.\n
-                   Click to load ../../../test.mkv"
+                   Click to load test.mkv"
+        }
+
+        Column {
+            Button {
+                anchors.margins: 10
+                text: "Reinit QQuickItem renderer (for testing opengl-cb uninit during playback)"
+                onClicked: renderer.reinitRenderer()
+            }
+            Button {
+                anchors.margins: 10
+                text: "Cycle video"
+                onClicked: renderer.command(["cycle", "video"])
+            }
         }
     }
 }
