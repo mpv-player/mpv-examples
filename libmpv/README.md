@@ -45,6 +45,13 @@ that of modern UI toolkits - it's normally worked around, but this is not
 easily possible with raw window embedding). It seems to have stability problems
 on OSX when using the Qt toolkit.
 
+Both on X11 and win32, the player will fill the window referenced by the "wid"
+option fully and letterbox the video (i.e. add black bars if the aspect ratio of
+the window and the video mismatch).
+
+Setting the "input-vo-keyboard" may be required to get keyboard input through
+the embedded window, if this is desired.
+
 ### OpenGL embedding
 
 This method lets you use libmpv's OpenGL renderer directly. You create an
