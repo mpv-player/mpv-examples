@@ -3,9 +3,20 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 
 #include <mpv/client.h>
 #include <mpv/stream_cb.h>
+
+static int64_t size_fn(void *cookie)
+{
+    FILE *fp = (FILE*) cookie;
+    struct stat st;
+    if(fstat(fileno(fp),&st)) {
+        return MPV_ERROR_UNSUPPORTED;
+    }
+    return st.st_size;
+}
 
 static int64_t read_fn(void *cookie, char *buf, uint64_t nbytes)
 {
@@ -35,6 +46,7 @@ static int open_fn(void *user_data, char *uri, mpv_stream_cb_info *info)
 {
     FILE *fp = fopen((char *)user_data, "r");
     info->cookie = fp;
+    info->size_fn = size_fn;
     info->read_fn = read_fn;
     info->seek_fn = seek_fn;
     info->close_fn = close_fn;
