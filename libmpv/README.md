@@ -130,3 +130,11 @@ video.
 
 Demonstrates use of the custom stream API.
 
+### wxwidgets
+
+Shows how to embed the mpv video window in wxWidgets frame.
+
+### wxwidgets_opengl
+
+Similar to wxwidgets sample, but shows how to use mpv's OpenGL video renderer
+using libmpv's opengl-cb API in wxWidgets frame via wxGLCanvas.
