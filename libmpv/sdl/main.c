@@ -1,4 +1,4 @@
-// Build with: gcc -o main main.c `pkg-config --libs --cflags mpv sdl2`
+// Build with: gcc -o main main.c `pkg-config --libs --cflags mpv sdl2` -std=c99
 
 #include <stddef.h>
 #include <stdio.h>
@@ -7,7 +7,7 @@
 #include <SDL.h>
 
 #include <mpv/client.h>
-#include <mpv/opengl_cb.h>
+#include <mpv/render_gl.h>
 
 static Uint32 wakeup_on_mpv_redraw, wakeup_on_mpv_events;
 
@@ -57,25 +57,23 @@ int main(int argc, char *argv[])
     if (!window)
         die("failed to create SDL window");
 
-    // The OpenGL API is somewhat separate from the normal mpv API. This only
-    // returns NULL if no OpenGL support is compiled.
-    mpv_opengl_cb_context *mpv_gl = mpv_get_sub_api(mpv, MPV_SUB_API_OPENGL_CB);
-    if (!mpv_gl)
-        die("failed to create mpv GL API handle");
-
     SDL_GLContext glcontext = SDL_GL_CreateContext(window);
     if (!glcontext)
         die("failed to create SDL GL context");
 
-    // This makes mpv use the currently set GL context. It will use the callback
-    // to resolve GL builtin functions, as well as extensions.
-    if (mpv_opengl_cb_init_gl(mpv_gl, NULL, get_proc_address_mpv, NULL) < 0)
-        die("failed to initialize mpv GL context");
+    mpv_render_param params[] = {
+        {MPV_RENDER_PARAM_API_TYPE, MPV_RENDER_API_TYPE_OPENGL},
+        {MPV_RENDER_PARAM_OPENGL_INIT_PARAMS, &(mpv_opengl_init_params){
+            .get_proc_address = get_proc_address_mpv,
+        }},
+        {0}
+    };
 
-    // Actually using the opengl_cb state has to be explicitly requested.
-    // Otherwise, mpv will create a separate platform window.
-    if (mpv_set_option_string(mpv, "vo", "opengl-cb") < 0)
-        die("failed to set VO");
+    // This makes mpv use the currently set GL context. It will use the callback
+    // (passed via params) to resolve GL builtin functions, as well as extensions.
+    mpv_render_context *mpv_gl;
+    if (mpv_render_context_create(&mpv_gl, mpv, params) < 0)
+        die("failed to initialize mpv GL context");
 
     // We use events for thread-safe notification of the SDL main loop.
     // Generally, the wakeup callbacks (set further below) should do as least
@@ -93,7 +91,7 @@ int main(int argc, char *argv[])
     // When a new frame should be drawn with mpv_opengl_cb_draw().
     // (Separate from the normal event handling mechanism for the sake of
     //  users which run OpenGL on a different thread.)
-    mpv_opengl_cb_set_update_callback(mpv_gl, on_mpv_redraw, NULL);
+    mpv_render_context_set_update_callback(mpv_gl, on_mpv_redraw, NULL);
 
     // Play this file. Note that this starts playback asynchronously.
     const char *cmd[] = {"loadfile", argv[1], NULL};
@@ -134,16 +132,23 @@ int main(int argc, char *argv[])
         if (redraw) {
             int w, h;
             SDL_GetWindowSize(window, &w, &h);
-            // Note:
-            // - The 0 is the FBO to use; 0 is the default framebuffer (i.e.
-            //   render to the window directly.
-            // - The negative height tells mpv to flip the coordinate system.
-            // - If you do not want the video to cover the whole screen, or want
-            //   to apply any form of fancy transformation, you will have to
-            //   render to a FBO.
-            // - See opengl_cb.h on what OpenGL environment mpv expects, and
-            //   other API details.
-            mpv_opengl_cb_draw(mpv_gl, 0, w, -h);
+            mpv_render_param params[] = {
+                // Specify the default framebuffer (0) as target. This will
+                // render onto the entire screen. If you want to show the video
+                // in a smaller rectangle or apply fancy transformations, you'll
+                // need to render into a separate FBO and draw it manually.
+                {MPV_RENDER_PARAM_OPENGL_FBO, &(mpv_opengl_fbo){
+                    .fbo = 0,
+                    .w = w,
+                    .h = h,
+                }},
+                // Flip rendering (needed due to flipped GL coordinate system).
+                {MPV_RENDER_PARAM_FLIP_Y, &(int){1}},
+                {0}
+            };
+            // See render_gl.h on what OpenGL environment mpv expects, and
+            // other API details.
+            mpv_render_context_render(mpv_gl, params);
             SDL_GL_SwapWindow(window);
         }
     }
@@ -151,7 +156,7 @@ done:
 
     // Destroy the GL renderer and all of the GL objects it allocated. If video
     // is still running, the video track will be deselected.
-    mpv_opengl_cb_uninit_gl(mpv_gl);
+    mpv_render_context_free(mpv_gl);
 
     mpv_terminate_destroy(mpv);
     return 0;
