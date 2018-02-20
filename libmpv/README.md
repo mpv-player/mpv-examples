@@ -52,11 +52,11 @@ the window and the video mismatch).
 Setting the "input-vo-keyboard" may be required to get keyboard input through
 the embedded window, if this is desired.
 
-### OpenGL embedding
+### Render API
 
 This method lets you use libmpv's OpenGL renderer directly. You create an
-OpenGL context, and then use `mpv_opengl_cb_draw()` to render the video on
-each frame.
+OpenGL context, and then use `mpv_render_context_render()` to render the video
+on each frame. (This can be OpenGL emulation as well, such as with ANGLE.)
 
 This is more complicated, because libmpv will work directly on your own OpenGL
 state. It's also not possible to have mpv automatically receive user input.
@@ -67,13 +67,27 @@ You also get much more flexibility. For example, you can actually render your
 own OSD on top of the video, something that is not possible with raw window
 embedding.
 
+### Deprecated opengl-cb API
+
+An older variant of the render API is called opengl-cb (in `libmpv/opengl_cb.h`).
+It is almost equivalent, but is hardcoded to OpenGL and has some other
+disadvantages. It is deprecated, and you should use `libmpv/render.h` instead.
+
+Unfortunately, many examples still use he opengl-cb API. Changing to the new
+render API is trivial, though.
+
 ### Which one to use?
 
 Due to the various platform-specific behavior and problems (in particular on
-OSX), OpenGL embedding is recommended. If you're not comfortable with requiring
-OpenGL, or want to support "direct" video output such as vdpau (which might
-win when it comes to performance and energy-saving), you should probably
-support both methods if possible.
+OSX), using the render API is currently recommended over window embedding. In
+some cases, window embedding can be preferable, because it is simpler and has
+no disadvantages for the specific use case.
+
+If you're not comfortable with the higher complexity and requirements on the
+GPU, or window embedding happens to work fine for your use case, or you want
+to support "direct" video output such as vdpau (which might win when it comes
+to performance and energy-saving), you should probably support both methods
+if possible.
 
 ## List of examples
 
