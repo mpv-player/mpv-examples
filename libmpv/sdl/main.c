@@ -131,6 +131,16 @@ int main(int argc, char *argv[])
                 const char *cmd_pause[] = {"cycle", "pause", NULL};
                 mpv_command_async(mpv, 0, cmd_pause);
             }
+            if (event.key.keysym.sym == SDLK_s) {
+                // Also requires MPV_RENDER_PARAM_ADVANCED_CONTROL if you want
+                // screenshots to be rendered on GPU (like --vo=gpu would do).
+                const char *cmd_scr[] = {"screenshot-to-file",
+                                         "screenshot.png",
+                                         "window",
+                                         NULL};
+                printf("attempting to save screenshot to %s\n", cmd_scr[1]);
+                mpv_command_async(mpv, 0, cmd_scr);
+            }
             break;
         default:
             // Happens when there is new work for the render thread (such as
