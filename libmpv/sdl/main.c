@@ -9,7 +9,7 @@
 #include <mpv/client.h>
 #include <mpv/render_gl.h>
 
-static Uint32 wakeup_on_mpv_redraw, wakeup_on_mpv_events;
+static Uint32 wakeup_on_mpv_render_update, wakeup_on_mpv_events;
 
 static void die(const char *msg)
 {
@@ -28,9 +28,9 @@ static void on_mpv_events(void *ctx)
     SDL_PushEvent(&event);
 }
 
-static void on_mpv_redraw(void *ctx)
+static void on_mpv_render_update(void *ctx)
 {
-    SDL_Event event = {.type = wakeup_on_mpv_redraw};
+    SDL_Event event = {.type = wakeup_on_mpv_render_update};
     SDL_PushEvent(&event);
 }
 
@@ -46,6 +46,11 @@ int main(int argc, char *argv[])
     // Some minor options can only be set before mpv_initialize().
     if (mpv_initialize(mpv) < 0)
         die("mpv init failed");
+
+    mpv_request_log_messages(mpv, "debug");
+
+    // Jesus Christ SDL, you suck!
+    SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "no");
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
         die("SDL init failed");
@@ -66,6 +71,16 @@ int main(int argc, char *argv[])
         {MPV_RENDER_PARAM_OPENGL_INIT_PARAMS, &(mpv_opengl_init_params){
             .get_proc_address = get_proc_address_mpv,
         }},
+        // Tell libmpv that you will call mpv_render_context_update() on render
+        // context update callbacks, and that you will _not_ block on the core
+        // ever (see <libmpv/render.h> "Threading" section for what libmpv
+        // functions you can call at all when this is active).
+        // In particular, this means you must call e.g. mpv_command_async()
+        // instead of mpv_command().
+        // If you want to use synchronous calls, either make them on a separate
+        // thread, or remove the option below (this will disable features like
+        // DR and is not recommended anyway).
+        {MPV_RENDER_PARAM_ADVANCED_CONTROL, &(int){1}},
         {0}
     };
 
@@ -80,22 +95,24 @@ int main(int argc, char *argv[])
     // work as possible, and merely wake up another thread to do actual work.
     // On SDL, waking up the mainloop is the ideal course of action. SDL's
     // SDL_PushEvent() is thread-safe, so we use that.
-    wakeup_on_mpv_redraw = SDL_RegisterEvents(1);
+    wakeup_on_mpv_render_update = SDL_RegisterEvents(1);
     wakeup_on_mpv_events = SDL_RegisterEvents(1);
-    if (wakeup_on_mpv_redraw == (Uint32)-1 || wakeup_on_mpv_events == (Uint32)-1)
+    if (wakeup_on_mpv_render_update == (Uint32)-1 ||
+        wakeup_on_mpv_events == (Uint32)-1)
         die("could not register events");
 
     // When normal mpv events are available.
     mpv_set_wakeup_callback(mpv, on_mpv_events, NULL);
 
-    // When a new frame should be drawn with mpv_opengl_cb_draw().
+    // When there is a need to call mpv_render_context_update(), which can
+    // request a new frame to be rendered.
     // (Separate from the normal event handling mechanism for the sake of
     //  users which run OpenGL on a different thread.)
-    mpv_render_context_set_update_callback(mpv_gl, on_mpv_redraw, NULL);
+    mpv_render_context_set_update_callback(mpv_gl, on_mpv_render_update, NULL);
 
-    // Play this file. Note that this starts playback asynchronously.
+    // Play this file.
     const char *cmd[] = {"loadfile", argv[1], NULL};
-    mpv_command(mpv, cmd);
+    mpv_command_async(mpv, 0, cmd);
 
     while (1) {
         SDL_Event event;
@@ -110,14 +127,19 @@ int main(int argc, char *argv[])
                 redraw = 1;
             break;
         case SDL_KEYDOWN:
-            if (event.key.keysym.sym == SDLK_SPACE)
-                mpv_command_string(mpv, "cycle pause");
+            if (event.key.keysym.sym == SDLK_SPACE) {
+                const char *cmd_pause[] = {"cycle", "pause", NULL};
+                mpv_command_async(mpv, 0, cmd_pause);
+            }
             break;
         default:
-            // Happens when a new video frame should be rendered, or if the
-            // current frame has to be redrawn e.g. due to OSD changes.
-            if (event.type == wakeup_on_mpv_redraw)
-                redraw = 1;
+            // Happens when there is new work for the render thread (such as
+            // rendering a new video frame or redrawing it).
+            if (event.type == wakeup_on_mpv_render_update) {
+                uint64_t flags = mpv_render_context_update(mpv_gl);
+                if (flags & MPV_RENDER_UPDATE_FRAME)
+                    redraw = 1;
+            }
             // Happens when at least 1 new event is in the mpv event queue.
             if (event.type == wakeup_on_mpv_events) {
                 // Handle all remaining mpv events.
@@ -125,6 +147,17 @@ int main(int argc, char *argv[])
                     mpv_event *mp_event = mpv_wait_event(mpv, 0);
                     if (mp_event->event_id == MPV_EVENT_NONE)
                         break;
+                    if (mp_event->event_id == MPV_EVENT_LOG_MESSAGE) {
+                        mpv_event_log_message *msg = mp_event->data;
+                        // Print log messages about DR allocations, just to
+                        // test whether it works. If there is more than 1 of
+                        // these, it works. (The log message can actually change
+                        // any time, so it's possible this logging stops working
+                        // in the future.)
+                        if (strstr(msg->text, "DR image"))
+                            printf("log: %s", msg->text);
+                        continue;
+                    }
                     printf("event: %s\n", mpv_event_name(mp_event->event_id));
                 }
             }
@@ -159,5 +192,7 @@ done:
     mpv_render_context_free(mpv_gl);
 
     mpv_detach_destroy(mpv);
+
+    printf("properly terminated\n");
     return 0;
 }
