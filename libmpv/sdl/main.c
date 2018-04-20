@@ -158,6 +158,6 @@ done:
     // is still running, the video track will be deselected.
     mpv_render_context_free(mpv_gl);
 
-    mpv_terminate_destroy(mpv);
+    mpv_detach_destroy(mpv);
     return 0;
 }
