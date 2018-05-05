@@ -5,7 +5,7 @@
 
 #include <mpv/client.h>
 #include <mpv/render_gl.h>
-#include <mpv/qthelper.hpp>
+#include "../common/qthelper.hpp"
 
 class MpvRenderer;
 

@@ -17,7 +17,7 @@
 #include <QJsonDocument>
 #endif
 
-#include <mpv/qthelper.hpp>
+#include "../common/qthelper.hpp"
 
 #include "qtexample.h"
 
