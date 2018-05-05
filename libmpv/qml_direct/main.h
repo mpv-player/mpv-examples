@@ -5,7 +5,7 @@
 
 #include <mpv/client.h>
 #include <mpv/opengl_cb.h>
-#include <mpv/qthelper.hpp>
+#include "../common/qthelper.hpp"
 
 class MpvRenderer : public QObject
 {
