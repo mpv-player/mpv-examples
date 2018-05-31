@@ -3,7 +3,7 @@
 
 #include <QtWidgets/QOpenGLWidget>
 #include <mpv/client.h>
-#include <mpv/opengl_cb.h>
+#include <mpv/render_gl.h>
 #include <mpv/qthelper.hpp>
 
 class MpvWidget Q_DECL_FINAL: public QOpenGLWidget
@@ -23,15 +23,14 @@ protected:
     void initializeGL() Q_DECL_OVERRIDE;
     void paintGL() Q_DECL_OVERRIDE;
 private Q_SLOTS:
-    void swapped();
     void on_mpv_events();
     void maybeUpdate();
 private:
     void handle_mpv_event(mpv_event *event);
     static void on_update(void *ctx);
 
-    mpv::qt::Handle mpv;
-    mpv_opengl_cb_context *mpv_gl;
+    mpv_handle *mpv;
+    mpv_render_context *mpv_gl;
 };
 
 
