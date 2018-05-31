@@ -70,12 +70,12 @@ void MpvWidget::initializeGL()
 
     if (mpv_render_context_create(&mpv_gl, mpv, params) < 0)
         throw std::runtime_error("failed to initialize mpv GL context");
-    mpv_render_context_set_update_callback(mpv_gl, MpvWidget::on_update, (void *)this);
+    mpv_render_context_set_update_callback(mpv_gl, MpvWidget::on_update, reinterpret_cast<void *>(this));
 }
 
 void MpvWidget::paintGL()
 {
-    mpv_opengl_fbo mpfbo{static_cast<int>(defaultFramebufferObject()), fbo->width(), fbo->height(), 0};
+    mpv_opengl_fbo mpfbo{static_cast<int>(defaultFramebufferObject()), width(), height(), 0};
     int flip_y{1};
 
     mpv_render_param params[] = {
