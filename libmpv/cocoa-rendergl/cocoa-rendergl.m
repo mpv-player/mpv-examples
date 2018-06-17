@@ -1,9 +1,9 @@
 // Plays a video from the command line in an opengl view in its own window.
 
-// Build with: clang -o cocoa-openglcb cocoa-openglcb.m `pkg-config --libs --cflags mpv` -framework Cocoa -framework OpenGL
+// Build with: clang -o cocoa-rendergl cocoa-rendergl.m `pkg-config --libs --cflags mpv` -framework Cocoa -framework OpenGL
 
 #import <mpv/client.h>
-#import <mpv/opengl_cb.h>
+#import <mpv/render_gl.h>
 
 #import <stdio.h>
 #import <stdlib.h>
@@ -31,7 +31,7 @@ static void *get_proc_address(void *ctx, const char *name)
 static void glupdate(void *ctx);
 
 @interface MpvClientOGLView : NSOpenGLView
-@property mpv_opengl_cb_context *mpvGL;
+@property mpv_render_context *mpvGL;
 - (instancetype)initWithFrame:(NSRect)frame;
 - (void)drawRect;
 - (void)fillBlack;
@@ -68,9 +68,25 @@ static void glupdate(void *ctx);
 
 - (void)drawRect
 {
-    if (self.mpvGL)
-        mpv_opengl_cb_draw(self.mpvGL, 0, self.bounds.size.width, -self.bounds.size.height);
-    else
+    if (self.mpvGL) {
+        mpv_render_param params[] = {
+            // Specify the default framebuffer (0) as target. This will
+            // render onto the entire screen. If you want to show the video
+            // in a smaller rectangle or apply fancy transformations, you'll
+            // need to render into a separate FBO and draw it manually.
+            {MPV_RENDER_PARAM_OPENGL_FBO, &(mpv_opengl_fbo){
+                .fbo = 0,
+                .w = self.bounds.size.width,
+                .h = self.bounds.size.height,
+            }},
+            // Flip rendering (needed due to flipped GL coordinate system).
+            {MPV_RENDER_PARAM_FLIP_Y, &(int){1}},
+            {0}
+        };
+        // See render_gl.h on what OpenGL environment mpv expects, and
+        // other API details.
+        mpv_render_context_render(self.mpvGL, params);
+    } else
         [self fillBlack];
     [[self openGLContext] flushBuffer];
 }
@@ -134,7 +150,7 @@ static void wakeup(void *);
     // force a minimum size to stop opengl from exploding.
     [window setMinSize:NSMakeSize(200, 200)];
     [window initOGLView];
-    [window setTitle:@"cocoa-openglcb example"];
+    [window setTitle:@"cocoa-rendergl example"];
     [window makeMainWindow];
     [window makeKeyAndOrderFront:nil];
 
@@ -178,20 +194,25 @@ static void wakeup(void *);
     check_error(mpv_request_log_messages(mpv, "warn"));
 
     check_error(mpv_initialize(mpv));
-    check_error(mpv_set_option_string(mpv, "vo", "opengl-cb"));
-    mpv_opengl_cb_context *mpvGL = mpv_get_sub_api(mpv, MPV_SUB_API_OPENGL_CB);
-    if (!mpvGL) {
-        puts("libmpv does not have the opengl-cb sub-API.");
+    check_error(mpv_set_option_string(mpv, "vo", "libmpv"));
+    
+    mpv_render_param params[] = {
+        {MPV_RENDER_PARAM_API_TYPE, MPV_RENDER_API_TYPE_OPENGL},
+        {MPV_RENDER_PARAM_OPENGL_INIT_PARAMS, &(mpv_opengl_init_params){
+            .get_proc_address = get_proc_address,
+        }},
+        {0}
+    };
+    
+    mpv_render_context *mpvGL;
+    if (mpv_render_context_create(&mpvGL, mpv, params) < 0) {
+        puts("failed to initialize mpv GL context");
         exit(1);
     }
     // pass the mpvGL context to our view
     window.glView.mpvGL = mpvGL;
-    int r = mpv_opengl_cb_init_gl(mpvGL, NULL, get_proc_address, NULL);
-    if (r < 0) {
-        puts("gl init has failed.");
-        exit(1);
-    }
-    mpv_opengl_cb_set_update_callback(mpvGL, glupdate, (__bridge void *)window.glView);
+    
+    mpv_render_context_set_update_callback(mpvGL, glupdate, (__bridge void *)window.glView);
 
     // Deal with MPV in the background.
     queue = dispatch_queue_create("mpv", DISPATCH_QUEUE_SERIAL);
@@ -218,8 +239,8 @@ static void glupdate(void *ctx)
 {
     switch (event->event_id) {
     case MPV_EVENT_SHUTDOWN: {
-        mpv_detach_destroy(mpv);
-        mpv_opengl_cb_uninit_gl(window.glView.mpvGL);
+        mpv_render_context_free(window.glView.mpvGL);
+        mpv_terminate_destroy(mpv);
         mpv = NULL;
         printf("event: shutdown\n");
         break;
