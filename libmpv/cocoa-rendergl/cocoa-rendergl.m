@@ -138,8 +138,8 @@ static void wakeup(void *);
 
 - (void)createWindow {
 
-    int mask = NSTitledWindowMask|NSClosableWindowMask|
-               NSMiniaturizableWindowMask|NSResizableWindowMask;
+    int mask = NSWindowStyleMaskTitled|NSWindowStyleMaskClosable|
+               NSWindowStyleMaskMiniaturizable|NSWindowStyleMaskResizable;
 
     window = [[CocoaWindow alloc]
         initWithContentRect:NSMakeRect(0, 0, 1280, 720)
