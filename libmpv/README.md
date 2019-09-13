@@ -9,9 +9,9 @@ systems, this is in `/usr/include/mpv/client.h`.)
 
 libmpv merely gives you access to mpv's command interface, which is documented
 here:
-* Options (`mpv_set_option()` and friends): http://mpv.io/manual/master/#options
 * Commands (`mpv_command()` and friends): http://mpv.io/manual/master/#list-of-input-commands
 * Properties (`mpv_set_property()` and friends): http://mpv.io/manual/master/#properties
+* Options (`mpv_set_property()` and friends, `mpv_set_option()` in obscure cases): http://mpv.io/manual/master/#options
 
 Essentially everything is done with them, including loading a file, retrieving
 playback progress, and so on.
