@@ -4,8 +4,8 @@ All these examples use the mpv client API through libmpv.
 
 ## Where are the docs?
 
-The libmpv C API is documented directly in the header files (on normal Unix
-systems, this is in `/usr/include/mpv/client.h`.
+The libmpv C API is documented directly in the header files. (On normal Unix
+systems, this is in `/usr/include/mpv/client.h`.)
 
 libmpv merely gives you access to mpv's command interface, which is documented
 here:
@@ -49,8 +49,8 @@ Both on X11 and win32, the player will fill the window referenced by the "wid"
 option fully and letterbox the video (i.e. add black bars if the aspect ratio of
 the window and the video mismatch).
 
-Setting the "input-vo-keyboard" may be required to get keyboard input through
-the embedded window, if this is desired.
+Setting the `input-vo-keyboard` option may be required to get keyboard input
+through the embedded window, if this is desired.
 
 ### Render API
 
