@@ -1,4 +1,4 @@
-// Build with: g++ -o main main.cpp `wx-config --libs --cxxflags` -lmpv
+// Build with: g++ -o main main.cpp `wx-config-gtk3 --libs --cxxflags` `pkg-config --cflags --libs gtk+-3.0` -lmpv
 
 #include "main.h"
 
@@ -6,6 +6,12 @@
 #include <string>
 
 #include <wx/display.h>
+
+#ifdef __WXGTK__
+#include <gdk/gdk.h>
+#include <gdk/gdkx.h>
+#include <gtk/gtk.h>
+#endif
 
 wxIMPLEMENT_APP(MpvApp);
 
@@ -34,7 +40,17 @@ MpvFrame::MpvFrame()
 
     auto panel = new wxPanel(this, wxID_ANY,
                              wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS);
-    MpvCreate(reinterpret_cast<int64_t>(panel->GetHandle()));
+    uint64_t wid;
+#if defined(__WXMSW__)
+    wid = reinterpret_cast<int64_t>(panel->GetHandle());
+#elif defined(__WXGTK__)
+    GtkWidget *widget = panel->GetHandle();
+    gtk_widget_realize(widget);
+    wid = GDK_WINDOW_XID(gtk_widget_get_parent_window(widget));
+#else
+    #error cannot determine wid
+#endif
+    MpvCreate(wid);
 
     if (wxGetApp().argc == 2) {
         const std::string filepath(wxGetApp().argv[1].utf8_str().data());
