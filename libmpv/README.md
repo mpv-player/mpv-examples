@@ -73,8 +73,7 @@ An older variant of the render API is called opengl-cb (in `libmpv/opengl_cb.h`)
 It is almost equivalent, but is hardcoded to OpenGL and has some other
 disadvantages. It is deprecated, and you should use `libmpv/render.h` instead.
 
-Unfortunately, many examples still use he opengl-cb API. Changing to the new
-render API is trivial, though.
+The old API does not work anymore (as of mpv 0.33.0), and was deactivated.
 
 ### Which one to use?
 
