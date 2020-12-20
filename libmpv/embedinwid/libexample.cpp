@@ -29,9 +29,9 @@
 using std::string;
 
 #ifdef _WIN32 /* Windows */
-#define EXPORTED_FUNCTION extern "C" __declspec(dllexport)
+  #define EXPORTED_FUNCTION extern "C" __declspec(dllexport)
 #else /* Linux, macOS, and FreeBSD */
-#define EXPORTED_FUNCTION extern "C" __attribute__((visibility("default"))) 
+  #define EXPORTED_FUNCTION extern "C" __attribute__((visibility("default"))) 
 #endif
 
 EXPORTED_FUNCTION void splash_set_stop_mouse(bool stop) {
