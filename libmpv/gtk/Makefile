@@ -1,5 +1,5 @@
 CC ?= gcc
-CFLAGS += -Wall -pedantic `pkg-config --cflags mpv gtk+-3.0 epoxy`
+CFLAGS += -g -Wall -pedantic `pkg-config --cflags mpv gtk+-3.0 epoxy`
 LDLIBS += `pkg-config --libs mpv gtk+-3.0 epoxy`
 
 SRC = main.c

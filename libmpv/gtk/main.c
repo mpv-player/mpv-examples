@@ -19,14 +19,13 @@ struct mpv_player {
     int width;
     int height;
 
-    int redraw;
-    int has_events;
-
     int pause;
 };
 
-void process_events(struct mpv_player* player) {
+gboolean process_events(gpointer data) {
+    struct mpv_player *player = (struct mpv_player*) data;
     int done = 0;
+
     while (!done) {
         mpv_event *event = mpv_wait_event(player->handle, 0);
 
@@ -54,18 +53,12 @@ void process_events(struct mpv_player* player) {
             default: ;
         }
     }
+
+    return FALSE;
 }
 
 static void on_mpv_events(void *ctx) {
-    struct mpv_player *player = (struct mpv_player*) ctx;
-
-    player->has_events = 1;
-}
-
-static void on_mpv_render_update(void *ctx) {
-    struct mpv_player *player = (struct mpv_player*) ctx;
-
-    player->redraw = 1;
+    g_idle_add_full(G_PRIORITY_HIGH_IDLE, process_events, ctx, NULL);
 }
 
 static void *get_proc_address(void *fn_ctx, const gchar *name) {
@@ -93,11 +86,6 @@ static void *get_proc_address(void *fn_ctx, const gchar *name) {
 static gboolean render(GtkGLArea *area, GdkGLContext *context, gpointer user_data) {
     struct mpv_player *player = user_data;
 
-    if (player->has_events) {
-        process_events(player);
-        player->has_events = 0;
-    }
-
     // Render frame
     if ((mpv_render_context_update(player->render_context) & MPV_RENDER_UPDATE_FRAME)) {
         gint fbo = -1;
@@ -113,8 +101,6 @@ static gboolean render(GtkGLArea *area, GdkGLContext *context, gpointer user_dat
         };
 
         mpv_render_context_render(player->render_context, params);
-
-        player->redraw = 0;
     }
 
     gtk_gl_area_queue_render(area);
@@ -122,22 +108,9 @@ static gboolean render(GtkGLArea *area, GdkGLContext *context, gpointer user_dat
     return TRUE;
 }
 
-static void realize(GtkGLArea *area) {
-    gtk_gl_area_make_current(area);
-}
-
-static void resize(GtkGLArea *area, int width, int height, gpointer user_data) {
-    struct mpv_player *player = user_data;
-
-    player->width = width;
-    player->height = height;
-}
-
 void mpv_init(struct mpv_player *player) {
     setlocale(LC_NUMERIC, "C");
     player->handle = mpv_create();
-    player->redraw = 1;
-    player->has_events = 0;
     player->pause = 0;
 
     mpv_initialize(player->handle);
@@ -159,7 +132,17 @@ void mpv_init(struct mpv_player *player) {
     mpv_observe_property(player->handle, 0, "time-pos", MPV_FORMAT_DOUBLE);
 
     mpv_set_wakeup_callback(player->handle, on_mpv_events, player);
-    mpv_render_context_set_update_callback(player->render_context, on_mpv_render_update, player);
+}
+
+static void realize(GtkGLArea *area) {
+    gtk_gl_area_make_current(area);
+}
+
+static void resize(GtkGLArea *area, int width, int height, gpointer user_data) {
+    struct mpv_player *player = user_data;
+
+    player->width = width;
+    player->height = height;
 }
 
 void seek_absolute(GtkRange *range, GtkScrollType scroll, double value, gpointer user_data) {
@@ -204,8 +187,8 @@ void button_seek_forward_clicked(GtkButton *button, gpointer user_data) {
 }
 
 int main(int argc, char **argv) {
-    if (argc != 2) {
-        printf("Please supply a video file name as the first and only argument\n");
+    if (argc < 2) {
+        printf("Please supply a video file name...\n");
         exit(1);
     }
 
