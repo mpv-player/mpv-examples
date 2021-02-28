@@ -240,6 +240,7 @@ int main(int argc, char **argv) {
 
     mpv_render_context_free(player->render_context);
     mpv_detach_destroy(player->handle);
+    free(player);
 
     return 0;
 }
