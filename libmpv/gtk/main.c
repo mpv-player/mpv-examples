@@ -4,7 +4,9 @@
 #include <gtk/gtk.h>
 
 #include <epoxy/glx.h>
+#include <epoxy/egl.h>
 #include <gdk/gdkx.h>
+#include <gdk/gdkwayland.h>
 
 #include <mpv/client.h>
 #include <mpv/render_gl.h>
