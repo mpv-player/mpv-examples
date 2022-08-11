@@ -44,7 +44,7 @@ static void close_fn(void *cookie)
 
 static int open_fn(void *user_data, char *uri, mpv_stream_cb_info *info)
 {
-    FILE *fp = fopen((char *)user_data, "r");
+    FILE *fp = fopen((char *)user_data, "rb");
     info->cookie = fp;
     info->size_fn = size_fn;
     info->read_fn = read_fn;
