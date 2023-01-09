@@ -68,8 +68,14 @@ MainWindow::MainWindow(QWidget *parent) :
     setCentralWidget(mpv_container);
     mpv_container->setAttribute(Qt::WA_DontCreateNativeAncestors);
     mpv_container->setAttribute(Qt::WA_NativeWindow);
-    // If you have a HWND, use: int64_t wid = (intptr_t)hwnd;
-    int64_t wid = mpv_container->winId();
+    auto raw_wid = mpv_container->winId();
+#ifdef _WIN32
+    // Truncate to 32-bit, as all Windows handles are. This also ensures
+    // it doesn't go negative.
+    int64_t wid = static_cast<uint32_t>(raw_wid);
+#else
+    int64_t wid = raw_wid;
+#endif
     mpv_set_option(mpv, "wid", MPV_FORMAT_INT64, &wid);
 
     // Enable default bindings, because we're lazy. Normally, a player using
