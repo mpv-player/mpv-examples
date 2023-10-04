@@ -1,7 +1,7 @@
 #ifndef PLAYERWINDOW_H
 #define PLAYERWINDOW_H
 
-#include <QtWidgets/QOpenGLWidget>
+#include <QOpenGLWidget>
 #include <mpv/client.h>
 #include <mpv/render_gl.h>
 #include "../common/qthelper.hpp"
@@ -10,7 +10,7 @@ class MpvWidget Q_DECL_FINAL: public QOpenGLWidget
 {
     Q_OBJECT
 public:
-    MpvWidget(QWidget *parent = 0, Qt::WindowFlags f = 0);
+    MpvWidget(QWidget *parent = 0, Qt::WindowFlags f = Qt::WindowFlags());
     ~MpvWidget();
     void command(const QVariant& params);
     void setProperty(const QString& name, const QVariant& value);
