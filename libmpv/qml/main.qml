@@ -1,5 +1,5 @@
 import QtQuick 2.0
-import QtQuick.Controls 1.0
+import QtQuick.Controls 2.0
 
 import mpvtest 1.0
 
@@ -13,7 +13,7 @@ Item {
 
         MouseArea {
             anchors.fill: parent
-            onClicked: renderer.command(["loadfile", "test.mkv"])
+            onClicked: renderer.command(["loadfile", "C:/Users/Siddhant/Downloads/orig cut.mp4"])
         }
     }
 
@@ -61,8 +61,8 @@ Item {
                 anchors.margins: 10
                 anchors.left: checkbox.left
                 anchors.right: checkbox.right
-                minimumValue: -100
-                maximumValue:  100
+                from: -100
+                to:  100
                 value: 0
                 onValueChanged: renderer.setProperty("gamma", slider.value | 0)
             }
