@@ -38,6 +38,8 @@ int main(int argc, char *argv[])
     if (!mpv)
         die("context init failed");
 
+    mpv_set_option_string(mpv, "vo", "libmpv");
+
     // Some minor options can only be set before mpv_initialize().
     if (mpv_initialize(mpv) < 0)
         die("mpv init failed");
