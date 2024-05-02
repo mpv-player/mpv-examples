@@ -195,7 +195,7 @@ done:
     // is still running, the video track will be deselected.
     mpv_render_context_free(mpv_rd);
 
-    mpv_detach_destroy(mpv);
+    mpv_destroy(mpv);
 
     printf("properly terminated\n");
     return 0;
