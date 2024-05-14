@@ -130,7 +130,7 @@ static void wakeup(void *);
 {
     switch (event->event_id) {
     case MPV_EVENT_SHUTDOWN: {
-        mpv_detach_destroy(mpv);
+        mpv_destroy(mpv);
         mpv = NULL;
         printf("event: shutdown\n");
         break;
