@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
     mpv_request_log_messages(mpv, "debug");
 
     // Jesus Christ SDL, you suck!
-    SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "no");
+    SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
         die("SDL init failed");
