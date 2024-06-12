@@ -8,7 +8,7 @@
 #include <QOpenGLContext>
 #include <QGuiApplication>
 
-#include <QtGui/QOpenGLFramebufferObject>
+#include <QOpenGLFramebufferObject>
 
 #include <QtQuick/QQuickWindow>
 #include <QtQuick/QQuickView>
@@ -75,7 +75,7 @@ public:
 
     void render()
     {
-        obj->window()->resetOpenGLState();
+        obj->window()->beginExternalCommands();
 
         QOpenGLFramebufferObject *fbo = framebufferObject();
         mpv_opengl_fbo mpfbo{.fbo = static_cast<int>(fbo->handle()), .w = fbo->width(), .h = fbo->height(), .internal_format = 0};
@@ -95,7 +95,7 @@ public:
         // other API details.
         mpv_render_context_render(obj->mpv_gl, params);
 
-        obj->window()->resetOpenGLState();
+        obj->window()->endExternalCommands();
     }
 };
 
@@ -153,7 +153,7 @@ void MpvObject::setProperty(const QString& name, const QVariant& value)
 
 QQuickFramebufferObject::Renderer *MpvObject::createRenderer() const
 {
-    window()->setPersistentOpenGLContext(true);
+    window()->setPersistentGraphics(true);
     window()->setPersistentSceneGraph(true);
     return new MpvRenderer(const_cast<MpvObject *>(this));
 }

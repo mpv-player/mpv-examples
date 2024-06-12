@@ -76,7 +76,7 @@ void MpvWidget::initializeGL()
 
 void MpvWidget::paintGL()
 {
-    mpv_opengl_fbo mpfbo{static_cast<int>(defaultFramebufferObject()), width(), height(), 0};
+    mpv_opengl_fbo mpfbo{static_cast<int>(defaultFramebufferObject()), (int) (width() * devicePixelRatio()), (int) (height() * devicePixelRatio()), 0};
     int flip_y{1};
 
     mpv_render_param params[] = {
